@@ -8,7 +8,7 @@ use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
 
-class GetCurrentWeek extends Request
+class GetSeason extends Request
 {
     /**
      * The HTTP method of the request

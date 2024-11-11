@@ -3,7 +3,7 @@
 namespace Tests;
 
 use App\Http\Integrations\ESPNApiConnector\ESPNApiConnector;
-use App\Http\Integrations\ESPNApiConnector\Requests\GetCurrentWeek;
+use App\Http\Integrations\ESPNApiConnector\Requests\GetSeason;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
@@ -19,7 +19,7 @@ abstract class TestCase extends BaseTestCase
 	public function test_it_connects_to_Espn() {
 
 		$connector = new ESPNApiConnector();
-		$request = new GetCurrentWeek();
+		$request = new GetSeason();
 
 		$response = $connector->send($request);
 
@@ -34,7 +34,7 @@ abstract class TestCase extends BaseTestCase
 	 */
 	public function test_it_returns_current_week() {
 		$connector = new ESPNApiConnector();
-		$request = new GetCurrentWeek();
+		$request = new GetSeason();
 
 		$response = $connector->send($request);
 
@@ -46,7 +46,7 @@ abstract class TestCase extends BaseTestCase
 
 	public function test_request_is_cached() {
 		$connector = new ESPNApiConnector();
-		$request = new GetCurrentWeek();
+		$request = new GetSeason();
 
 		$response = $connector->send($request);
 		$this->assertTrue($response->isCached());
@@ -55,7 +55,7 @@ abstract class TestCase extends BaseTestCase
 
 	public function test_dto_creation() {
 		$connector = new ESPNApiConnector();
-		$response = $connector->send(new GetCurrentWeek());
+		$response = $connector->send(new GetSeason());
 
 		$season = $response->dto();
 		dd($season);

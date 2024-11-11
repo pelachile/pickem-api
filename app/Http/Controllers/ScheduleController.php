@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\DataTransferObjects\Season;
 use App\Http\Integrations\ESPNApiConnector\ESPNApiConnector;
-use App\Http\Integrations\ESPNApiConnector\Requests\GetCurrentWeek;
+use App\Http\Integrations\ESPNApiConnector\Requests\GetSeason;
 use App\Http\Integrations\ESPNApiConnector\Requests\getCurrentWeekGames;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetWeeklyGames;
+use JsonException;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 
 class ScheduleController extends Controller
 {
 	protected ESPNApiConnector $connector;
-	protected GetCurrentWeek $currentWeek;
+	protected GetSeason $currentSeason;
 	protected GetCurrentWeekGames $getCurrentWeekGames;
 	protected GetWeeklyGames $getWeeklyGames;
 
@@ -23,16 +25,15 @@ class ScheduleController extends Controller
 
 	/**
 	 * Display a listing of the resource.
-	 * @return string
+	 * @return Season
 	 * @throws FatalRequestException
-	 * @throws RequestException|\JsonException
+	 * @throws RequestException|JsonException
 	 */
-	public function getCurrentWeek():string
+	public function getSeason():Season
 	{
-		$request = new GetCurrentWeek();
+		$request = new GetSeason();
 		$response = $this->connector->send($request);
-//		return $response->json('types')['items'][1]['week']['$ref'];
-		return json_encode($response->dto());
+		return $response->dto();
 	}
 
 	/**
@@ -40,20 +41,16 @@ class ScheduleController extends Controller
 	 * @throws RequestException
 	 * @throws \JsonException
 	 */
-	public function getGameLinks(): array
+	public function getGameLinks(): string
 	{
-		$week = $this->getCurrentWeek();
-		$url = explode('/nfl', $week);
+		$url = $this->getSeason()->week['url'];
+		$url = explode('/nfl', $url);
 		$requestGamesLinkUrl = new GetCurrentWeekGames($url[1]);
-
 		$gameLinkUrl = $this->connector->send($requestGamesLinkUrl)->json()['events']['$ref'];
-
 		$requestGamesLinkArray = new GetWeeklyGames($gameLinkUrl);
 
 		$gameLinks = $this->connector->send($requestGamesLinkArray)->json()['items'];
-
-		return $gameLinks;
-
+		dd($gameLinks);
 	}
 
 }
