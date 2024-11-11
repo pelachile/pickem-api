@@ -5,7 +5,7 @@ namespace App\Http\Integrations\ESPNApiConnector\Requests;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
 
-class GetCurrentWeekGames extends Request
+class GetWeeklySchedule extends Request
 {
     /**
      * The HTTP method of the request

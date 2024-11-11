@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\DataTransferObjects\Game;
 use App\Http\DataTransferObjects\Season;
 use App\Http\Integrations\ESPNApiConnector\ESPNApiConnector;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetSeason;
-use App\Http\Integrations\ESPNApiConnector\Requests\getCurrentWeekGames;
+use App\Http\Integrations\ESPNApiConnector\Requests\GetWeeklySchedule;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetWeeklyGames;
 use JsonException;
 use Saloon\Exceptions\Request\FatalRequestException;
@@ -15,7 +16,7 @@ class ScheduleController extends Controller
 {
 	protected ESPNApiConnector $connector;
 	protected GetSeason $currentSeason;
-	protected GetCurrentWeekGames $getCurrentWeekGames;
+	protected GetWeeklySchedule $getCurrentWeekGames;
 	protected GetWeeklyGames $getWeeklyGames;
 
 	public function __construct()
@@ -41,16 +42,35 @@ class ScheduleController extends Controller
 	 * @throws RequestException
 	 * @throws \JsonException
 	 */
-	public function getGameLinks(): string
+	public function getWeeklySchedule(): GetWeeklyGames
 	{
 		$url = $this->getSeason()->week['url'];
 		$url = explode('/nfl', $url);
-		$requestGamesLinkUrl = new GetCurrentWeekGames($url[1]);
+		$requestGamesLinkUrl = new GetWeeklySchedule($url[1]);
 		$gameLinkUrl = $this->connector->send($requestGamesLinkUrl)->json()['events']['$ref'];
-		$requestGamesLinkArray = new GetWeeklyGames($gameLinkUrl);
+		return new GetWeeklyGames($gameLinkUrl);
 
-		$gameLinks = $this->connector->send($requestGamesLinkArray)->json()['items'];
-		dd($gameLinks);
+		//return $this->connector->send($requestGamesLinkArray)->json()['items'];
+	}
+
+	/**
+	 * @throws FatalRequestException
+	 * @throws RequestException
+	 * @throws JsonException
+	 */
+	public function getGames()
+	{
+		$request = $this->getWeeklySchedule();
+		$games = $this->connector->send($request);
+		$gameArray = $games->json()['items'];
+		$dtos = [];
+		foreach ($gameArray as $game) {
+			$request = new GetWeeklyGames($game['$ref']);
+			$response = $this->connector->send($request);
+			$dtos[] = $response->dto();
+		}
+
+		dd($dtos);
 	}
 
 }
