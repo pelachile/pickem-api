@@ -70,7 +70,22 @@ class ScheduleController extends Controller
 			$dtos[] = $response->dto();
 		}
 
-		dd($dtos);
+		return $dtos;
 	}
+
+	public function getTeams()
+	{
+		$teams = $this->getGames();
+		$competitors = [];
+		foreach ($teams as $competitor) {
+			$competitors[] = $competitor;
+		}
+		for ($i=0;$i<count($competitors); $i++) {
+			$competitors[] = $competitors[$i]['competitions'];
+		}
+
+		return $competitors;
+	}
+
 
 }
