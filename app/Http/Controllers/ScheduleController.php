@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\DataTransferObjects\Game;
 use App\Http\DataTransferObjects\Season;
+use App\Http\DataTransferObjects\Team;
 use App\Http\Integrations\ESPNApiConnector\ESPNApiConnector;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetSeason;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetWeeklySchedule;
@@ -49,8 +50,6 @@ class ScheduleController extends Controller
 		$requestGamesLinkUrl = new GetWeeklySchedule($url[1]);
 		$gameLinkUrl = $this->connector->send($requestGamesLinkUrl)->json()['events']['$ref'];
 		return new GetWeeklyGames($gameLinkUrl);
-
-		//return $this->connector->send($requestGamesLinkArray)->json()['items'];
 	}
 
 	/**
@@ -73,18 +72,28 @@ class ScheduleController extends Controller
 		return $dtos;
 	}
 
+	/**
+	 * @throws FatalRequestException
+	 * @throws RequestException
+	 * @throws JsonException
+	 */
 	public function getTeams()
 	{
 		$teams = $this->getGames();
-		$competitors = [];
-		foreach ($teams as $competitor) {
-			$competitors[] = $competitor;
-		}
-		for ($i=0;$i<count($competitors); $i++) {
-			$competitors[] = $competitors[$i]['competitions'];
+
+		$games = [];
+		foreach ($teams as $team) {
+		$games[] = $team->competitions[0]['competitors'];
 		}
 
-		return $competitors;
+		$homeTeam = [];
+		$awayTeam = [];
+		for ($i=0;$i<count($games); $i++) {
+			$homeTeam[] = $games[$i][0]['team']['$ref'];
+			$awayTeam[] = $games[$i][1]['team']['$ref'];
+		}
+
+	return $homeTeam[0] . ' vs ' . $awayTeam[0];
 	}
 
 

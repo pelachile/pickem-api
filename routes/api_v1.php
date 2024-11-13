@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-		Route::get('season',[ScheduleController::class, 'getWeeklySchedule']);
+		Route::get('season',[ScheduleController::class, 'getGames']);
 		Route::get('week', [ScheduleController::class,'getTeams']);
 });
 
