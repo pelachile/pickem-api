@@ -14,12 +14,17 @@ class GetTeams extends Request
      */
     protected Method $method = Method::GET;
 
+		public function __construct(protected readonly string $url)
+		{
+
+		}
+
     /**
      * The endpoint for the request
      */
     public function resolveEndpoint(): string
     {
-        return '/example';
+        return $this->url;
     }
 
 	/**
@@ -28,15 +33,14 @@ class GetTeams extends Request
 	public function createDtoFromResponse(Response $response): Team
 	{
 		$data = $response->json();
-
 		return new Team(
-			uuid: $data['uuid'],
-			location: $data['location'],
-			homeAway: $data['homeAway'],
-			logo: $data['logo'],
-			url: $data['url'],
-			color: $data['color'],
-			alternateColor: $data['alternateColor'],
+			$data['id'],
+			$data['location'],
+			$data['name'],
+			$data['logos'][0]['href'],
+			$data['$ref'],
+			$data['color'],
+			$data['alternateColor'],
 		);
 	}
 }

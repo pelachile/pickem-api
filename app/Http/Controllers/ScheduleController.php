@@ -7,6 +7,7 @@ use App\Http\DataTransferObjects\Season;
 use App\Http\DataTransferObjects\Team;
 use App\Http\Integrations\ESPNApiConnector\ESPNApiConnector;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetSeason;
+use App\Http\Integrations\ESPNApiConnector\Requests\GetTeams;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetWeeklySchedule;
 use App\Http\Integrations\ESPNApiConnector\Requests\GetWeeklyGames;
 use JsonException;
@@ -43,13 +44,15 @@ class ScheduleController extends Controller
 	 * @throws RequestException
 	 * @throws \JsonException
 	 */
-	public function getWeeklySchedule(): GetWeeklyGames
+	public function getWeeklySchedule(): array
 	{
 		$url = $this->getSeason()->week['url'];
 		$url = explode('/nfl', $url);
-		$requestGamesLinkUrl = new GetWeeklySchedule($url[1]);
-		$gameLinkUrl = $this->connector->send($requestGamesLinkUrl)->json()['events']['$ref'];
-		return new GetWeeklyGames($gameLinkUrl);
+		$request = new GetWeeklySchedule($url[1]);
+		$response = $this->connector->send($request)->json()['events']['$ref'];
+		$games = new GetWeeklyGames($response);
+		$response = $this->connector->send($games);
+		return $response->json()['items'];
 	}
 
 	/**
@@ -57,19 +60,16 @@ class ScheduleController extends Controller
 	 * @throws RequestException
 	 * @throws JsonException
 	 */
-	public function getGames()
+	public function getGames(): array
 	{
-		$request = $this->getWeeklySchedule();
-		$games = $this->connector->send($request);
-		$gameArray = $games->json()['items'];
-		$dtos = [];
-		foreach ($gameArray as $game) {
-			$request = new GetWeeklyGames($game['$ref']);
+		$links = $this->getWeeklySchedule();
+		$games = [];
+		foreach ($links as $link) {
+			$request = new GetWeeklyGames($link['$ref']);
 			$response = $this->connector->send($request);
-			$dtos[] = $response->dto();
+			$games[] = $response->dto();
 		}
-
-		return $dtos;
+	return $games;
 	}
 
 	/**
@@ -80,7 +80,6 @@ class ScheduleController extends Controller
 	public function getTeams()
 	{
 		$teams = $this->getGames();
-
 		$games = [];
 		foreach ($teams as $team) {
 		$games[] = $team->competitions[0]['competitors'];
@@ -88,12 +87,23 @@ class ScheduleController extends Controller
 
 		$homeTeam = [];
 		$awayTeam = [];
+		$teams = [];
 		for ($i=0;$i<count($games); $i++) {
-			$homeTeam[] = $games[$i][0]['team']['$ref'];
-			$awayTeam[] = $games[$i][1]['team']['$ref'];
+			$homeTeamUrl[$i] = explode('/nfl',$games[$i][0]['team']['$ref']);
+			$homeTeam[$i] = $homeTeamUrl[$i][1];
+			$awayTeamUrl = explode('/nfl', $games[$i][1]['team']['$ref']);
+			$awayTeam[$i] = $awayTeamUrl[1];
+			$teams['home'] = new GetTeams($homeTeam[$i]);
+			$homeResponse = $this->connector->send($teams['home']);
+			$teams[$i]['home'] = $homeResponse->dto();
+			$teams['away'] = new GetTeams($awayTeam[$i]);
+			$awayResponse = $this->connector->send($teams['away']);
+			$teams[$i]['away'] = $awayResponse->dto();
+
 		}
 
-	return $homeTeam[0] . ' vs ' . $awayTeam[0];
+		return $teams;
+
 	}
 
 
